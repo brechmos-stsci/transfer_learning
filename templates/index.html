@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block main %}
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-hsv.v0.1.min.js"></script>
+
+
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-12">
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<div class="row">
+				<div class="col-md-4">
+                    <div class="panel panel-primary">
+						<div class="panel-heading">
+							<h3 class="panel-title">
+                                Main Image
+							</h3>
+						</div>
+						<div class="panel-body">
+                            <input id="main_image_input" type="text" style="width: 100%;"> <br/>
+                            <canvas id="main_image" style="width:100%; height: auto;">Loading...</canvas>
+						</div>
+						<div class="panel-footer">
+							<span id="main_image_xy"></span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-8 subimages">
+					<div class="row">
+						<div class="col-md-4">
+                            <div id="sub_image_input1" style="width: 100%;">&nbsp;</div>
+                            <canvas id="sub_image1" style="width:150px; height: auto;"></canvas>
+						</div>
+						<div class="col-md-4">
+                            <div id="sub_image_input2" style="width: 100%;">&nbsp; </div>
+                            <canvas id="sub_image2" style="width:150px; height: auto;"></canvas>
+						</div>
+						<div class="col-md-4">
+                            <div id="sub_image_input3" style="width: 100%;">&nbsp; </div>
+                            <canvas id="sub_image3" style="width:150px; height: auto;"></canvas>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4">
+                            <div id="sub_image_input4" style="width: 100%;">&nbsp; </div>
+                            <canvas id="sub_image4" style="width:150px; height: auto;"></canvas>
+						</div>
+						<div class="col-md-4">
+                            <div id="sub_image_input5" style="width: 100%;"> &nbsp;</div>
+                            <canvas id="sub_image5" style="width:150px; height: auto;"></canvas>
+						</div>
+						<div class="col-md-4">
+                            <div id="sub_image_input6" style="width: 100%;">&nbsp; </div>
+                            <canvas id="sub_image6" style="width:150px; height: auto;"></canvas>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4">
+                            <div id="sub_image_input7" style="width: 100%;">&nbsp; </div>
+                            <canvas id="sub_image7" style="width:150px; height: auto;"></canvas>
+						</div>
+						<div class="col-md-4">
+                            <div id="sub_image_input8" style="width: 100%;"> &nbsp;</div>
+                            <canvas id="sub_image8" style="width:150px; height: auto;"></canvas>
+						</div>
+						<div class="col-md-4">
+                            <div id="sub_image_input9" style="width: 100%;"> &nbsp;</div>
+                            <canvas id="sub_image9" style="width:150px; height: auto;"></canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-10">
+            Similarity <select id="similarity_select">
+                <option value="tsne">tSNE</option>
+                <option value="jaccard">Jaccard</option>
+            </select>
+		</div>
+		<div class="col-md-2">
+            <span id="loading_info"></span>
+        </div>
+	</div>
+</div>
+
+<script>
+
+// Load the data once the doc is finished loading.
+$(document).ready(function() {
+
+    var ctx = document.getElementById("main_image").getContext("2d");
+    ctx.font = "30px Arial";
+    ctx.fillText("Loading data...",10,50)
+    
+    var similarity_select = $('#similarity_select').val();
+    
+    $('#main_image_input').val(128);
+    var ind = 128;
+    update_similarity_images();
+    
+    $.ajax({
+        url: '/getcutout/'+ind+'/'+similarity_select+'/', 
+        success: function(data) {
+            show_data('#main_image', data);
+        }
+    });
+
+});
+
+function update_similarity_images()
+{
+    var slice = $('#main_image_input').val();
+    var similarity_select = $('#similarity_select').val();
+    
+    $.get('/getcutout/'+slice+'/'+similarity_select+'/', function(data) {
+        show_data('#main_image', data);
+
+        $('span#loading_info').text('Loading...');
+        
+        // https://stackoverflow.com/questions/18413969/pass-variable-to-function-in-jquery-ajax-success-callback
+        for( var ii=0; ii<9; ii++ )
+        {
+            var ind = data.similar[0][ii];
+            var value_similar = data.similar[1][ii];
+            var subimage_number = ii+1;
+            
+			similarity_select = "none";
+            $.ajax({
+                url: '/getcutout/'+ind+'/'+similarity_select+'/', 
+                subimage_number: subimage_number,
+                ind_similar: ind,
+                value_similar: value_similar,
+                success: function(data) {
+                    show_data('#sub_image'+this.subimage_number, data);
+                    $('#sub_image_input'+this.subimage_number).text(this.ind_similar + ' (' + parseFloat(this.value_similar).toFixed(3) + ')');
+                }
+            });
+        }
+
+        $('span#loading_info').text('');
+        
+    });
+}
+
+
+/* 
+ *  Change of input for main image slice number.
+ */
+$(document).on('change', '#main_image_input', function(e) {
+    update_similarity_images();
+});
+
+/* 
+ *  Change of input for the similarity type.
+ */
+$(document).on('change', '#similarity_select', function(e) {
+    update_similarity_images();
+});
+
+
+/*
+ *  Show the data in a canvas object.
+ */
+function show_data(image_id, data) {
+console.log('Going to show ' + image_id);
+    var i0 = d3.interpolateHsvLong(d3.hsv(120, 1, 0.65), d3.hsv(60, 1, 0.90)),
+        i1 = d3.interpolateHsvLong(d3.hsv(60, 1, 0.90), d3.hsv(0, 0, 0.95)),
+        interpolateTerrain = function(t) { return t < 0.5 ? i0(t * 2) : i1((t - 0.5) * 2); },
+        color = d3.scaleSequential(interpolateTerrain).domain([90, 190]);
+
+    var n = data.width,
+        m = data.height;
+
+    var canvas = d3.select(image_id)
+        .attr("width", n)
+        .attr("height", m);
+
+    var context = canvas.node().getContext("2d"),
+        image = context.createImageData(n, m);
+
+    if(!data.rgb) {
+        for (var j = 0, k = 0, l = 0; j < m; ++j) {
+            for (var i = 0; i < n; ++i, ++k, l += 4) {
+                var c = d3.rgb(color(data.values[k]));
+                image.data[l + 0] = c.r;
+                image.data[l + 1] = c.g;
+                image.data[l + 2] = c.b;
+                image.data[l + 3] = 255;
+            }
+        }
+    }
+    else {
+        console.log('here');
+        for(var row=0, l=0; row<m; row++) {
+            for( var col=0; col<n; l+=4, col++) {
+                image.data[l] = data.values[l];
+                image.data[l+1] = data.values[l+1];
+                image.data[l+2] = data.values[l+2];
+                image.data[l+3] = data.values[l+3];
+            }
+        }
+    }
+        
+    context.putImageData(image, 0, 0);
+
+
+    // Mouse movement
+    $(image_id).mousemove(function(e) {
+    
+        // Get canvas size for scaling
+        var canvas_width = $(image_id).width();
+        var canvas_height = $(image_id).height();
+        
+        // https://stackoverflow.com/questions/12704686/html5-with-jquery-e-offsetx-is-undefined-in-firefox
+        if(e.offsetX==undefined) // this works for Firefox
+        {
+            xpos = e.pageX-$(image_id).offset().left;
+            ypos = e.pageY-$(image_id).offset().top;
+        }             
+        else                     // works in Google Chrome
+        {
+            xpos = e.offsetX;
+            ypos = e.offsetY;
+        }
+
+        // Image 
+        var im_x = parseInt(xpos / canvas_width * data.width);
+        var im_y = parseInt(ypos / canvas_height * data.height);
+
+        $(image_id+'_xy').text('(' + im_x + ', ' + im_y + ') ' + data.values[im_x*data.width + im_y].toFixed(3));
+    });
+}
+
+</script>
+
+{% endblock %}
