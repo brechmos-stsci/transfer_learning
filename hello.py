@@ -5,7 +5,6 @@ import asyncpg
 import numpy as np
 import json
 from random import randint
-import psycopg2
 
 hello_blueprint = Blueprint('hello', __name__)
 
