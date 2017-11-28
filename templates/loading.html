@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block main %}
+<center style="font-size: 24pt; min-height: 300px;">
+    Pre-Loading Data...
+</center>
+
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: '/load/', 
+        success: function(data) {
+            window.location.href = '/main/'; 
+        }
+    });
+});
+</script>
+{% endblock %}
