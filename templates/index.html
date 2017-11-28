@@ -79,7 +79,11 @@
 	<div class="row">
 		<div class="col-md-10">
             Similarity <select id="similarity_select">
-                <option value="tsne">tSNE</option>
+                <option value="tsne">tSNE (L2)</option>
+                <option value="tanimoto">tSNE (Tanimoto)</option>
+                <option value="cosine_similarity">tSNE (Cosine Similarity)</option>
+                <option value="inf_norm">tSNE (Linf)</option>
+                <option value="norm1">tSNE (L1)</option>
                 <option value="jaccard">Jaccard</option>
             </select>
 		</div>

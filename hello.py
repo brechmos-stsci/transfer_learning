@@ -53,6 +53,99 @@ async def getcutout(slice, similarity_type):
                     else:
                         count = count + 1
 
+    elif similarity_type == 'tanimoto':
+
+        # Get the tsne value from the database
+        async with current_app.pool.acquire() as connection:
+            async with connection.transaction():
+                row = await connection.fetchrow("""SELECT fingerprint FROM test WHERE fingerprint_type='tsne' and image_id=$1;""", slice)
+                tsne_value = json.loads(row['fingerprint'])['values']
+
+    
+        query = "SELECT image_id, madlib.dist_tanimoto(array_agg(e::text::float), '{{{}, {}}}') FROM test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 order by madlib.dist_tanimoto(array_agg(e::text::float), '{{{}, {}}}');".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
+        async with current_app.pool.acquire() as connection:
+            async with connection.transaction():
+                count = 0
+                inds = []
+                similarity_values = []
+                async for row in connection.cursor(query):
+                    inds.append(row[0]) 
+                    similarity_values.append(row[1]) 
+                    if count > 9:
+                        break
+                    else:
+                        count = count + 1
+
+
+    elif similarity_type == 'norm1':
+
+        # Get the tsne value from the database
+        async with current_app.pool.acquire() as connection:
+            async with connection.transaction():
+                row = await connection.fetchrow("""SELECT fingerprint FROM test WHERE fingerprint_type='tsne' and image_id=$1;""", slice)
+                tsne_value = json.loads(row['fingerprint'])['values']
+
+    
+        query = "SELECT image_id, dist FROM (select image_id, madlib.dist_norm1(array_agg(e::text::float), '{{{}, {}}}') as dist from test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 ) a order by dist;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
+        async with current_app.pool.acquire() as connection:
+            async with connection.transaction():
+                count = 0
+                inds = []
+                similarity_values = []
+                async for row in connection.cursor(query):
+                    inds.append(row[0]) 
+                    similarity_values.append(row[1]) 
+                    if count > 9:
+                        break
+                    else:
+                        count = count + 1
+
+    elif similarity_type == 'inf_norm':
+
+        # Get the tsne value from the database
+        async with current_app.pool.acquire() as connection:
+            async with connection.transaction():
+                row = await connection.fetchrow("""SELECT fingerprint FROM test WHERE fingerprint_type='tsne' and image_id=$1;""", slice)
+                tsne_value = json.loads(row['fingerprint'])['values']
+
+    
+        query = "SELECT image_id, dist FROM (select image_id, madlib.dist_inf_norm(array_agg(e::text::float), '{{{}, {}}}') as dist from test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 ) a order by dist;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
+        async with current_app.pool.acquire() as connection:
+            async with connection.transaction():
+                count = 0
+                inds = []
+                similarity_values = []
+                async for row in connection.cursor(query):
+                    inds.append(row[0]) 
+                    similarity_values.append(row[1]) 
+                    if count > 9:
+                        break
+                    else:
+                        count = count + 1
+
+    elif similarity_type == 'cosine_similarity':
+
+        # Get the tsne value from the database
+        async with current_app.pool.acquire() as connection:
+            async with connection.transaction():
+                row = await connection.fetchrow("""SELECT fingerprint FROM test WHERE fingerprint_type='tsne' and image_id=$1;""", slice)
+                tsne_value = json.loads(row['fingerprint'])['values']
+
+    
+        query = "SELECT image_id, dist FROM (select image_id, madlib.cosine_similarity(array_agg(e::text::float), '{{{}, {}}}') as dist from test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 ) a order by dist;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
+        async with current_app.pool.acquire() as connection:
+            async with connection.transaction():
+                count = 0
+                inds = []
+                similarity_values = []
+                async for row in connection.cursor(query):
+                    inds.append(row[0]) 
+                    similarity_values.append(row[1]) 
+                    if count > 9:
+                        break
+                    else:
+                        count = count + 1
+
     elif similarity_type == 'jaccard':
 
         async with current_app.pool.acquire() as connection:
