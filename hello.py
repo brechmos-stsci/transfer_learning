@@ -11,6 +11,10 @@ hello_blueprint = Blueprint('hello', __name__)
 @hello_blueprint.route('/')
 @hello_blueprint.route('/index')
 async def index():
+    return await render_template('index.html', title='Home')
+
+@hello_blueprint.route('/transfer_learning')
+async def transfer_learning():
     return await render_template('transfer_learning.html', title='Home')
 
 
