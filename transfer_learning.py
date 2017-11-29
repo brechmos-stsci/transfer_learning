@@ -1,10 +1,5 @@
-from quart import Quart, render_template, jsonify, session, Blueprint, current_app, request
-from astropy.io import fits
-import asyncio
-import asyncpg
-import numpy as np
+from quart import render_template, jsonify, Blueprint, current_app
 import json
-from random import randint
 from available_data import get_data
 
 import logging
