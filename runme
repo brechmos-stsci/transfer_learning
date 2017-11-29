@@ -1,3 +1,3 @@
 #! /bin/sh
 
-gunicorn --config gunicorn.py 'hello:create_app()' --workers=8
+gunicorn --config gunicorn.py 'transfer_learning:create_app()' --workers=8
