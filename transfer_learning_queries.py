@@ -47,7 +47,7 @@ ORDER BY a.dist LIMIT 9;
     'cosine_similarity':
         """
 SELECT image_id, dist FROM (
-    SELECT image_id, madlib.dist_cosine_similarity(array_agg(e::text::float), '{{{}, {}}}')  as dist
+    SELECT image_id, madlib.cosine_similarity(array_agg(e::text::float), '{{{}, {}}}')  as dist
     FROM test, json_array_elements(fingerprint->'values') e 
     WHERE fingerprint_type='tsne' 
     GROUP BY 1 
