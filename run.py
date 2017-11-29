@@ -6,6 +6,11 @@ import numpy as np
 import json
 from random import randint
 
+import logging
+logging.basicConfig()
+log = logging.getLogger('hdltl')
+log.setLevel(logging.INFO)
+
 from hdltl import blueprint as hdltl_blueprint
 from available_data import blueprint as available_data_blueprint
 from transfer_learning import blueprint as transfer_learning_blueprint
@@ -19,7 +24,7 @@ def create_app():
 
     @app.before_first_request
     async def create_db():
-        print('initializing the pool')
+        log.info('Initializing the postgres pool')
         app.pool = await asyncpg.create_pool(user='craig', password='dumb', database='hubble', host='127.0.0.1', max_size=20) 
 
     app.register_blueprint(hdltl_blueprint)

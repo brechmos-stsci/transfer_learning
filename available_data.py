@@ -6,10 +6,16 @@ import numpy as np
 import json
 from random import randint
 
+import logging
+logging.basicConfig()
+log = logging.getLogger('hdltl')
+
 blueprint = Blueprint('available_data', __name__)
 
 @blueprint.route('/data/<int:id>/')
 async def get_data(id):
+
+    log.info('Getting data for id {}'.format(id))
 
     to_send = np.zeros((224,224,4))
     to_send[:,:,:3] = np.load('data/image_{}.npy'.format(id))
@@ -19,11 +25,10 @@ async def get_data(id):
     to_send = np.clip((to_send - cmin) / (cmax-cmin) * 255, 0, 255)
     to_send[:,:,3] = 255*np.ones((224,224))
 
-    data = {
+    return {
         'rgb': True,
         'width': to_send.shape[0], 
         'height': to_send.shape[1], 
         'values': to_send.transpose((2,0,1)).ravel(order='F').tolist(),
     }
 
-    return jsonify(data)

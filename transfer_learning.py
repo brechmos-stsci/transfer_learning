@@ -5,34 +5,33 @@ import asyncpg
 import numpy as np
 import json
 from random import randint
+from available_data import get_data
+
+import logging
+logging.basicConfig()
+log = logging.getLogger('hdltl')
 
 blueprint = Blueprint('transfer_learning', __name__)
-
-@blueprint.route('/')
-@blueprint.route('/index')
-async def index():
-    return await render_template('index.html', title='Home')
 
 @blueprint.route('/transfer_learning')
 async def transfer_learning():
     return await render_template('transfer_learning.html', title='Home')
 
 
-@blueprint.route('/getcutout/<slice>/<similarity_type>/')
+@blueprint.route('/getcutout/<int:slice>/<similarity_type>/')
 async def getcutout(slice, similarity_type):
 
-    print('getcutout {} {}'.format(slice, similarity_type))
+    log.info('getcutout {} {}'.format(slice, similarity_type))
 
-    # Comes in as ae string, so convert to int
-    slice = int(slice)
+    # Get the data
+    data = await get_data(slice)
+    width = data['width']
+    height = data['height']
+    values = data['values']
 
-    to_send = np.zeros((224,224,4))
-    to_send[:,:,:3] = np.load('data/image_{}.npy'.format(slice))
-
-    # rescale to be between 0 and 255
-    cmin, cmax = np.percentile(to_send, [3, 97])
-    to_send = np.clip((to_send - cmin) / (cmax-cmin) * 255, 0, 255)
-    to_send[:,:,3] = 255*np.ones((224,224))
+    # Values we need to pass out
+    inds = []
+    similarity_values = []
 
     if similarity_type == 'tsne':
 
@@ -43,19 +42,12 @@ async def getcutout(slice, similarity_type):
                 tsne_value = json.loads(row['fingerprint'])['values']
 
     
-        query = "SELECT image_id, madlib.dist_norm2(array_agg(e::text::float), '{{{}, {}}}') FROM test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 order by madlib.dist_norm2(array_agg(e::text::float), '{{{}, {}}}');".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
+        query = "SELECT image_id, madlib.dist_norm2(array_agg(e::text::float), '{{{}, {}}}') FROM test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 order by madlib.dist_norm2(array_agg(e::text::float), '{{{}, {}}}') LIMIT 9;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
         async with current_app.pool.acquire() as connection:
             async with connection.transaction():
-                count = 0
-                inds = []
-                similarity_values = []
                 async for row in connection.cursor(query):
                     inds.append(row[0]) 
                     similarity_values.append(row[1]) 
-                    if count > 9:
-                        break
-                    else:
-                        count = count + 1
 
     elif similarity_type == 'tanimoto':
 
@@ -66,19 +58,12 @@ async def getcutout(slice, similarity_type):
                 tsne_value = json.loads(row['fingerprint'])['values']
 
     
-        query = "SELECT image_id, madlib.dist_tanimoto(array_agg(e::text::float), '{{{}, {}}}') FROM test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 order by madlib.dist_tanimoto(array_agg(e::text::float), '{{{}, {}}}');".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
+        query = "SELECT image_id, madlib.dist_tanimoto(array_agg(e::text::float), '{{{}, {}}}') FROM test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 order by madlib.dist_tanimoto(array_agg(e::text::float), '{{{}, {}}}') LIMIT 9;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
         async with current_app.pool.acquire() as connection:
             async with connection.transaction():
-                count = 0
-                inds = []
-                similarity_values = []
                 async for row in connection.cursor(query):
                     inds.append(row[0]) 
                     similarity_values.append(row[1]) 
-                    if count > 9:
-                        break
-                    else:
-                        count = count + 1
 
 
     elif similarity_type == 'norm1':
@@ -90,19 +75,12 @@ async def getcutout(slice, similarity_type):
                 tsne_value = json.loads(row['fingerprint'])['values']
 
     
-        query = "SELECT image_id, dist FROM (select image_id, madlib.dist_norm1(array_agg(e::text::float), '{{{}, {}}}') as dist from test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 ) a order by dist;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
+        query = "SELECT image_id, dist FROM (select image_id, madlib.dist_norm1(array_agg(e::text::float), '{{{}, {}}}') as dist from test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 ) a order by dist LIMIT 9;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
         async with current_app.pool.acquire() as connection:
             async with connection.transaction():
-                count = 0
-                inds = []
-                similarity_values = []
                 async for row in connection.cursor(query):
                     inds.append(row[0]) 
                     similarity_values.append(row[1]) 
-                    if count > 9:
-                        break
-                    else:
-                        count = count + 1
 
     elif similarity_type == 'inf_norm':
 
@@ -113,19 +91,12 @@ async def getcutout(slice, similarity_type):
                 tsne_value = json.loads(row['fingerprint'])['values']
 
     
-        query = "SELECT image_id, dist FROM (select image_id, madlib.dist_inf_norm(array_agg(e::text::float), '{{{}, {}}}') as dist from test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 ) a order by dist;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
+        query = "SELECT image_id, dist FROM (select image_id, madlib.dist_inf_norm(array_agg(e::text::float), '{{{}, {}}}') as dist from test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 ) a order by dist LIMIT 9;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
         async with current_app.pool.acquire() as connection:
             async with connection.transaction():
-                count = 0
-                inds = []
-                similarity_values = []
                 async for row in connection.cursor(query):
                     inds.append(row[0]) 
                     similarity_values.append(row[1]) 
-                    if count > 9:
-                        break
-                    else:
-                        count = count + 1
 
     elif similarity_type == 'cosine_similarity':
 
@@ -136,19 +107,12 @@ async def getcutout(slice, similarity_type):
                 tsne_value = json.loads(row['fingerprint'])['values']
 
     
-        query = "SELECT image_id, dist FROM (select image_id, madlib.cosine_similarity(array_agg(e::text::float), '{{{}, {}}}') as dist from test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 ) a order by dist;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
+        query = "SELECT image_id, dist FROM (select image_id, madlib.cosine_similarity(array_agg(e::text::float), '{{{}, {}}}') as dist from test, json_array_elements(fingerprint->'values') e WHERE fingerprint_type='tsne' group by 1 ) a order by dist LIMIT 9;".format(tsne_value[0], tsne_value[1], tsne_value[0], tsne_value[1])
         async with current_app.pool.acquire() as connection:
             async with connection.transaction():
-                count = 0
-                inds = []
-                similarity_values = []
                 async for row in connection.cursor(query):
                     inds.append(row[0]) 
                     similarity_values.append(row[1]) 
-                    if count > 9:
-                        break
-                    else:
-                        count = count + 1
 
     elif similarity_type == 'jaccard':
 
@@ -169,34 +133,28 @@ async def getcutout(slice, similarity_type):
                                     json_array_elements(fingerprint->'labels') e, 
                                     json_array_elements('{}') f group by 1 
                             ) a  
-                        ORDER BY a.jaccard_dist ASC LIMIT 10;""".format(json.dumps(labels))
+                        ORDER BY a.jaccard_dist ASC LIMIT 9;""".format(json.dumps(labels))
 
         async with current_app.pool.acquire() as connection:
             async with connection.transaction():
-                count = 0
-                inds = []
-                similarity_values = []
                 async for row in connection.cursor(query):
-
-                    print(row)
                     inds.append(row[0]) 
                     similarity_values.append(row[1]) 
 
-                    if count > 9:
-                        break
-                    else:
-                        count = count + 1
+
+    elif similarity_type == 'none':
+        # This is to allow getting of data without having to calculate the information
+        pass
 
     else:
-        inds = []
-        similarity_values = []
+        log.error('Unknown similarity type {}'.format(similarity_type))
 
     # Create the structure needed by ds3
     data = {
         'rgb': True,
-        'width': to_send.shape[0], 
-        'height': to_send.shape[1], 
-        'values': to_send.transpose((2,0,1)).ravel(order='F').tolist(),
+        'width': width,
+        'height': height,
+        'values': values,
         'similar': (inds[:9], similarity_values)
     }
 
