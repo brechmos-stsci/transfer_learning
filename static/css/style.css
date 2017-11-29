@@ -12,13 +12,14 @@ div#header {
     color: white;
     padding-left: 5px;
     padding-right: 5px;
+    margin-bottom: 1em;
 }
 
 div#footer {
     width: 100%;
     height: 60px;
     background-color: rgb(49,121,222);
-    margin-top: 2px;
+    margin-top: 1em;
 }
 
 div.subimages canvas {
@@ -38,4 +39,16 @@ div[id^=sub_image_input] {
 
 div.subimages div.col-md-4 {
     text-align: center;
+}
+
+div#footer table {
+    width: 100%;
+}
+
+div#footer table tr {
+    width: 100%;
+}
+
+div#footer td {
+    padding: 3px;
 }
