@@ -13,13 +13,14 @@
     <LINK REL=StyleSheet HREF="{{ url_for('static',filename='css/style.css') }}" TYPE="text/css" MEDIA=screen>
   </head>
   <body>
-  
-    {% block header %}
+
 	<a href="/">
 	    <div id="header">
 	        <b>Hubble Deep Learning - Transfer Learning {{filename}}</b>
 	    </div>
 	</a>
+  
+    {% block header %}
     {% endblock %}
         
 	{% block main %}
