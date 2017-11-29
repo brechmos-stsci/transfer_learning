@@ -6,19 +6,19 @@ import numpy as np
 import json
 from random import randint
 
-transfer_learning_blueprint = Blueprint('transfer_learning', __name__)
+blueprint = Blueprint('transfer_learning', __name__)
 
-@transfer_learning_blueprint.route('/')
-@transfer_learning_blueprint.route('/index')
+@blueprint.route('/')
+@blueprint.route('/index')
 async def index():
     return await render_template('index.html', title='Home')
 
-@transfer_learning_blueprint.route('/transfer_learning')
+@blueprint.route('/transfer_learning')
 async def transfer_learning():
     return await render_template('transfer_learning.html', title='Home')
 
 
-@transfer_learning_blueprint.route('/getcutout/<slice>/<similarity_type>/')
+@blueprint.route('/getcutout/<slice>/<similarity_type>/')
 async def getcutout(slice, similarity_type):
 
     print('getcutout {} {}'.format(slice, similarity_type))
@@ -201,24 +201,3 @@ async def getcutout(slice, similarity_type):
     }
 
     return jsonify(data)
-
-def create_app():
-    print('in create_app')
-    app = Quart(__name__)
-    app.secret_key = '9a8sdyflkhjasdf'
-    app.cutouts = None
-    app.cutout_similarities = None
-    app.cutout_similarities_jaccard = None
-
-    @app.before_first_request
-    async def create_db():
-        print('initializing the pool')
-        app.pool = await asyncpg.create_pool(user='craig', password='dumb', database='hubble', host='127.0.0.1', max_size=20) 
-
-    app.register_blueprint(transfer_learning_blueprint)
-
-    return app
-
-
-if __name__ == '__main__':
-    create_app().run()
