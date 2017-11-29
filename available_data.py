@@ -1,10 +1,5 @@
-from quart import Quart, render_template, jsonify, session, Blueprint, current_app, request
-from astropy.io import fits
-import asyncio
-import asyncpg
+from quart import Blueprint
 import numpy as np
-import json
-from random import randint
 
 import logging
 logging.basicConfig()
@@ -46,6 +41,6 @@ def normalize_rgb(data, lower_percentile=3, upper_percentile=97):
     data_out[:,:,:3] = np.clip((data - cmin) / (cmax-cmin) * 255, 0, 255)
 
     # Add Alpha channel
-    data_out[:,:,3] = 255*np.ones((nrows, ncols))
+    data_out[:, :, 3] = 255*np.ones((nrows, ncols))
 
     return data_out

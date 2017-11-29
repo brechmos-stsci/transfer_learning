@@ -1,4 +1,4 @@
-from quart import Quart, render_template, Blueprint
+from quart import render_template, Blueprint
 
 blueprint = Blueprint('index', __name__)
 
