@@ -249,7 +249,11 @@ console.log('Going to show ' + image_id);
         var im_x = parseInt(xpos / canvas_width * data.width);
         var im_y = parseInt(ypos / canvas_height * data.height);
 
-        $(image_id+'_xy').text('(' + im_x + ', ' + im_y + ') ' + data.values[im_x*data.width + im_y].toFixed(3));
+        $(image_id+'_xy').text('(' + im_x + ', ' + im_y + ') ' +
+        	data.values[im_x*data.height + im_y].toFixed(3) + ' '
+        	data.values[im_x*data.height + im_y+1].toFixed(3) + ' '
+        	data.values[im_x*data.height + im_y+2].toFixed(3)
+        	);
     });
 }
 
